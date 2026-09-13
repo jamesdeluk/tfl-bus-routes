@@ -1,0 +1,11 @@
+.venv/
+__pycache__/
+.DS_Store
+.streamlit/secrets.toml
+data/route_snapshot.json
+data/route_snapshot.full.json.gz
+data/route_snapshot.in_progress.json
+data/route_stats.in_progress.json
+__marimo__/
+notebooks/
+outputs/
