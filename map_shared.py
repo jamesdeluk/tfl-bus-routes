@@ -181,7 +181,7 @@ def render_map(
     """Render the common Folium map and return Streamlit-Folium click state."""
     return st_folium(
         build_map(route_numbers, source, pins, route_colours, search_target),
-        height=700,
+        height=550,
         use_container_width=True,
         key=map_key,
         # Panning and zooming remain browser-only; only interactions used by the pages rerun Streamlit.
