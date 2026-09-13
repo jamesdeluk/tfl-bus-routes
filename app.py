@@ -31,7 +31,8 @@ def main() -> None:
         )
     navigation = st.navigation(
         [
-            st.Page("pages/route_map.py", title="Show", icon="🗺️", default=True),
+            st.Page("pages/home.py", title="Home", icon="🏠", default=True),
+            st.Page("pages/route_map.py", title="Show", icon="🗺️"),
             st.Page("pages/explore.py", title="Explore", icon="📍"),
             st.Page("pages/go.py", title="Go", icon="🚌"),
             st.Page("pages/statistics.py", title="Statistics", icon="📊"),
