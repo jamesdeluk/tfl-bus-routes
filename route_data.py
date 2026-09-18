@@ -21,6 +21,7 @@ PROJECT_DIRECTORY = Path(__file__).parent
 OFFLINE_SNAPSHOT_PATH = PROJECT_DIRECTORY / "data" / "route_map_snapshot.json"
 FULL_OFFLINE_SNAPSHOT_PATH = PROJECT_DIRECTORY / "data" / "route_snapshot.json"
 OFFLINE_STATS_PATH = PROJECT_DIRECTORY / "data" / "route_stats.json"
+OFFLINE_NETWORK_STATS_PATH = PROJECT_DIRECTORY / "data" / "network_statistics.json"
 OFFLINE_LOCATION_INDEX_PATH = PROJECT_DIRECTORY / "data" / "london_location_index.json"
 ROUTE_SEQUENCE_URL = "https://api.tfl.gov.uk/Line/{route}/Route/Sequence/{direction}"
 TIMETABLE_URL = "https://api.tfl.gov.uk/Line/{route}/Timetable/{stop_id}"
@@ -61,6 +62,13 @@ def get_offline_snapshot() -> dict[str, Any]:
 def get_offline_stats() -> list[dict[str, Any]]:
     """Load the precomputed statistics derived from the downloaded route snapshot."""
     with OFFLINE_STATS_PATH.open() as stats_file:
+        return json.load(stats_file)
+
+
+@st.cache_data(ttl=60, show_spinner=False)
+def get_offline_network_statistics() -> dict[str, Any]:
+    """Load the precomputed true network-wide summary from the full TfL snapshot."""
+    with OFFLINE_NETWORK_STATS_PATH.open() as stats_file:
         return json.load(stats_file)
 
 
@@ -475,6 +483,51 @@ def scheduled_time_summary(timetable_data: dict[str, Any]) -> dict[str, float | 
         "q75_minutes": upper_quartile,
         "iqr_minutes": upper_quartile - lower_quartile,
         "max_minutes": max(values),
+    }
+
+
+def network_min_median_max(values: list[float]) -> dict[str, float]:
+    """Summarise every value in a network, rather than averaging per-route summaries."""
+    if not values:
+        raise ValueError("No values were available for the network-wide summary.")
+    return {"min": min(values), "median": percentile(values, 0.5), "max": max(values)}
+
+
+def network_statistics(snapshot: dict[str, Any]) -> dict[str, Any]:
+    """Calculate true network-wide spacing and weekday scheduled-time statistics."""
+    spacing_values: list[float] = []
+    driving_values: list[float] = []
+    stop_density_values: list[float] = []
+    route_directions = 0
+    for route_record in snapshot["routes"].values():
+        for direction in ("outbound", "inbound"):
+            sequence = route_record.get(direction, {}).get("sequence")
+            if not sequence:
+                continue
+            stops = sequence_stops(sequence)
+            if not stops:
+                continue
+            route_directions += 1
+            spacing_values.extend(stop_spacing_metres(sequence))
+            route_length = route_length_km(sequence)
+            if route_length:
+                stop_density_values.append(len(stops) / route_length)
+            timetable = route_record.get("timetables", {}).get(stops[0]["id"])
+            if timetable and "timetable" in timetable:
+                driving_values.extend(weekday_segment_minutes(timetable))
+
+    spacing = network_min_median_max(spacing_values)
+    driving = network_min_median_max(driving_values)
+    return {
+        "routes": len(snapshot["routes"]),
+        "route_directions": route_directions,
+        "consecutive_stop_pairs": len(spacing_values),
+        "weekday_scheduled_stop_pairs": len(driving_values),
+        "average_stops_per_km": sum(stop_density_values) / len(stop_density_values),
+        "average_stops_per_mile": sum(stop_density_values) / len(stop_density_values) * 1.609344,
+        "spacing_metres": spacing,
+        "driving_minutes": driving,
+        "walking_minutes": {name: walking_minutes(value) for name, value in spacing.items()},
     }
 
 

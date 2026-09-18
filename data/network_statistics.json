@@ -1,0 +1,23 @@
+{
+  "routes": 642,
+  "route_directions": 1277,
+  "consecutive_stop_pairs": 52942,
+  "weekday_scheduled_stop_pairs": 13751670,
+  "average_stops_per_km": 2.905627390422621,
+  "average_stops_per_mile": 4.676154007012302,
+  "spacing_metres": {
+    "min": 1.3089232414995664,
+    "median": 284.7762993790822,
+    "max": 7752.779322509977
+  },
+  "driving_minutes": {
+    "min": 0.0,
+    "median": 1.0,
+    "max": 37.0
+  },
+  "walking_minutes": {
+    "min": 0.017452309886660886,
+    "median": 3.797017325054429,
+    "max": 103.37039096679969
+  }
+}

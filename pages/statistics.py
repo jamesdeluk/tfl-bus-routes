@@ -1,20 +1,22 @@
 """Statistics page for weekday scheduled times and stop density."""
 
 from urllib.error import HTTPError, URLError
-from statistics import fmean
-
 import streamlit as st
 
 from route_data import (
     get_offline_stats,
+    get_offline_network_statistics,
     get_route_sequence,
     get_timetable,
     route_endpoints,
     route_length_km,
+    network_min_median_max,
     parse_route_numbers,
     scheduled_time_summary,
     sequence_stops,
     stop_spacing_summary,
+    stop_spacing_metres,
+    weekday_segment_minutes,
     walking_minutes,
 )
 
@@ -50,24 +52,48 @@ def summary_row(route_number: str, direction: str, source: str) -> dict[str, str
     }
 
 
-def overall_mean_row(rows: list[dict[str, str | float | int]]) -> dict[str, str | float | int]:
-    """Calculate the arithmetic mean of every numeric statistics column."""
-    first_row = rows[0]
-    mean_row = {
-        "Route": "Overall mean",
-        "Direction": f"{len(rows)} route-directions",
-        "Routes": len({str(row["Route"]) for row in rows}),
+def network_table_rows(statistics: dict[str, object]) -> list[dict[str, str | float]]:
+    """Format genuine network-wide values as the compact summary table."""
+    spacing = statistics["spacing_metres"]
+    driving = statistics["driving_minutes"]
+    walking = statistics["walking_minutes"]
+    return [
+        {"Metric": "Spacing (m)", "Min": spacing["min"], "Median": spacing["median"], "Max": spacing["max"]},
+        {
+            "Metric": "Driving time (min)",
+            "Min": driving["min"],
+            "Median": driving["median"],
+            "Max": driving["max"],
+        },
+        {
+            "Metric": "Walking time (min)",
+            "Min": walking["min"],
+            "Median": walking["median"],
+            "Max": walking["max"],
+        },
+    ]
+
+
+def live_network_statistics(route_numbers: tuple[str, ...]) -> dict[str, object]:
+    """Calculate a true summary over every selected live-route stop pair and weekday interval."""
+    spacing_values = []
+    driving_values = []
+    for route_number in route_numbers:
+        for direction in ("outbound", "inbound"):
+            route_data = get_route_sequence(route_number, direction, "api")
+            stops = sequence_stops(route_data)
+            if not stops:
+                continue
+            spacing_values.extend(stop_spacing_metres(route_data))
+            driving_values.extend(
+                weekday_segment_minutes(get_timetable(route_number, stops[0]["id"], "api"))
+            )
+    spacing = network_min_median_max(spacing_values)
+    return {
+        "spacing_metres": spacing,
+        "driving_minutes": network_min_median_max(driving_values),
+        "walking_minutes": {name: walking_minutes(value) for name, value in spacing.items()},
     }
-    for column, value in first_row.items():
-        if isinstance(value, (int, float)):
-            mean_value = fmean(row[column] for row in rows)
-            if column == "Stops":
-                mean_row[column] = round(mean_value)
-            elif "km" in column or "(min)" in column or "(m)" in column:
-                mean_row[column] = round(mean_value, 1)
-            else:
-                mean_row[column] = mean_value
-    return mean_row
 
 
 def main() -> None:
@@ -89,6 +115,11 @@ def main() -> None:
                 for route_number in api_routes
                 for direction in ("outbound", "inbound")
             ]
+        )
+        network_statistics = (
+            get_offline_network_statistics()
+            if source == "offline"
+            else live_network_statistics(api_routes)
         )
     except (HTTPError, RuntimeError) as error:
         if isinstance(error, HTTPError) and error.code != 429:
@@ -151,15 +182,23 @@ def main() -> None:
     visible_columns = core_columns + advanced_columns if show_advanced else core_columns
     visible_rows = [{column: row[column] for column in visible_columns} for row in rows]
     st.subheader("Overall statistics")
-    overall_row = overall_mean_row(rows)
-    overall_columns = ["Routes"] + [
-        column for column in visible_columns if column not in ("Route", "Direction")
-    ]
+    if source == "offline":
+        st.caption(
+            "Average route-direction stop density: "
+            f"{network_statistics['average_stops_per_km']:.1f} stops/km "
+            f"({network_statistics['average_stops_per_mile']:.1f} stops/mile)"
+        )
     st.dataframe(
-        [{column: overall_row[column] for column in overall_columns}],
+        [
+            {
+                column: round(value, 1) if isinstance(value, (int, float)) else value
+                for column, value in row.items()
+            }
+            for row in network_table_rows(network_statistics)
+        ],
         use_container_width=True,
         hide_index=True,
-        height=74,
+        height=144,
     )
 
     st.subheader("By route and direction")
@@ -170,7 +209,8 @@ def main() -> None:
         height=700,
     )
     st.info(
-        "Times are minutes between successive scheduled stop times, weighted by weekday journeys. "
+        "Overall statistics consider every consecutive stop pair and weekday timetable interval in "
+        "the selected network. Times are minutes between successive scheduled stop times, weighted by weekday journeys. "
         "TfL publishes these offsets to whole minutes, so 0 means the two stops share a scheduled "
         "minute, not that travel takes no time. Spacing is straight-line distance between stop "
         "coordinates, so the road distance travelled will be longer. Stop density is published stops "

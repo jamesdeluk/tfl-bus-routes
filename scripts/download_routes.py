@@ -21,6 +21,7 @@ from route_data import (
     TIMETABLE_URL,
     TflRateLimitError,
     fetch_json,
+    network_statistics,
     route_endpoints,
     route_length_km,
     scheduled_time_summary,
@@ -33,6 +34,7 @@ DATA_DIRECTORY = PROJECT_DIRECTORY / "data"
 FULL_SNAPSHOT_PATH = DATA_DIRECTORY / "route_snapshot.json"
 COMPACT_SNAPSHOT_PATH = DATA_DIRECTORY / "route_map_snapshot.json"
 STATS_PATH = DATA_DIRECTORY / "route_stats.json"
+NETWORK_STATS_PATH = DATA_DIRECTORY / "network_statistics.json"
 IN_PROGRESS_SNAPSHOT_PATH = DATA_DIRECTORY / "route_snapshot.in_progress.json"
 IN_PROGRESS_STATS_PATH = DATA_DIRECTORY / "route_stats.in_progress.json"
 # Target 480 requests per minute, leaving a small margin below TfL's keyed limit.
@@ -249,6 +251,7 @@ def main() -> None:
     write_json(FULL_SNAPSHOT_PATH, snapshot)
     write_json(COMPACT_SNAPSHOT_PATH, compact_snapshot(snapshot))
     write_json(STATS_PATH, statistics)
+    write_json(NETWORK_STATS_PATH, network_statistics(snapshot))
     print(
         f"Saved {len(snapshot['routes'])} routes, {len(statistics)} statistic rows, "
         f"and {len(snapshot['failures'])} failures.",
