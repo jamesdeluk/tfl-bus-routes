@@ -4,6 +4,7 @@ from urllib.error import HTTPError, URLError
 import streamlit as st
 
 from route_data import (
+    active_data_source,
     get_offline_stats,
     get_offline_network_statistics,
     get_route_sequence,
@@ -99,7 +100,7 @@ def live_network_statistics(route_numbers: tuple[str, ...]) -> dict[str, object]
 def main() -> None:
     """Render the weekday scheduled-time and stop-density statistics table."""
     st.title("Statistics")
-    source = st.session_state["data_source"]
+    source = active_data_source()
     st.caption("Weekday scheduled inter-stop times, stop spacing, and published stop density")
     api_routes = parse_route_numbers(st.session_state.get("api_route_input", ""))
     if source == "api" and not api_routes:

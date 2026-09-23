@@ -7,6 +7,7 @@ import altair as alt
 import streamlit as st
 
 from route_data import (
+    active_data_source,
     available_routes,
     parse_route_numbers,
     route_direction_stop_spacing_metres,
@@ -77,7 +78,7 @@ def histogram(
 def main() -> None:
     """Render the all-route stop-spacing histogram."""
     st.title("Spacing")
-    source = st.session_state["data_source"]
+    source = active_data_source()
     st.caption(
         "Every consecutive published stop pair across route directions. "
         "Shared road sections appear once for each service and direction that uses them."

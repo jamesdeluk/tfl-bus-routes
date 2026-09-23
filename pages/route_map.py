@@ -3,14 +3,14 @@
 import streamlit as st
 
 from map_shared import location_search_above_map, location_search_disclaimer, render_map
-from route_data import available_routes, parse_route_numbers, route_colour
+from route_data import active_data_source, available_routes, parse_route_numbers, route_colour
 
 
 def main() -> None:
     """Render selected route numbers without requiring a map pin."""
     st.title("Show")
     st.caption("Enter route numbers to display their published geometry and stops.")
-    source = st.session_state["data_source"]
+    source = active_data_source()
     search_target = location_search_above_map("show_route")
     controls_column, map_column = st.columns([1, 4], gap="large")
     with controls_column:

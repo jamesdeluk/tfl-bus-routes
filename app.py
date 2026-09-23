@@ -2,13 +2,13 @@
 
 import streamlit as st
 
-from route_data import OFFLINE_SNAPSHOT_PATH, OFFLINE_STATS_PATH
+from route_data import has_offline_data
 
 
 def main() -> None:
     """Configure the app and run the selected page."""
     st.set_page_config(page_title="TfL bus routes", page_icon="🚌", layout="wide")
-    offline_available = OFFLINE_SNAPSHOT_PATH.exists() and OFFLINE_STATS_PATH.exists()
+    offline_available = has_offline_data()
     data_sources = ("offline", "api") if offline_available else ("api",)
     st.sidebar.radio(
         "Data source",

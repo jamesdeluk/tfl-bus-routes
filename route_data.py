@@ -29,6 +29,24 @@ EARTH_RADIUS_KM = 6_371.0088
 WALKING_SPEED_KM_PER_HOUR = 4.5
 
 
+def has_offline_data() -> bool:
+    """Return whether every file required by the offline app mode is bundled."""
+    return all(
+        path.exists()
+        for path in (OFFLINE_SNAPSHOT_PATH, OFFLINE_STATS_PATH, OFFLINE_NETWORK_STATS_PATH)
+    )
+
+
+def active_data_source() -> str:
+    """Return the selected data source, including during direct page loads.
+
+    Streamlit can execute a page directly from a deep link before the sidebar widget in app.py
+    creates its session-state key. Defaulting here keeps every page usable in that fresh session.
+    """
+    default_source = "offline" if has_offline_data() else "api"
+    return st.session_state.get("data_source", default_source)
+
+
 class TflRateLimitError(RuntimeError):
     """Raised when TfL temporarily rejects requests because of rate limiting."""
 

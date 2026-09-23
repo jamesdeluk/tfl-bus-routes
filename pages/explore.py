@@ -11,7 +11,13 @@ from map_shared import (
     location_search_disclaimer,
     render_map,
 )
-from route_data import available_routes, parse_route_numbers, route_colour, routes_within_distance_metres
+from route_data import (
+    active_data_source,
+    available_routes,
+    parse_route_numbers,
+    route_colour,
+    routes_within_distance_metres,
+)
 
 
 def main() -> None:
@@ -21,7 +27,7 @@ def main() -> None:
         "Click once to add a pin and show every route with a published stop within the chosen distance. "
         "Click the pin again to remove it."
     )
-    source = st.session_state["data_source"]
+    source = active_data_source()
     if "explore_pin" not in st.session_state:
         st.session_state["explore_pin"] = None
     pin = st.session_state["explore_pin"]

@@ -13,6 +13,7 @@ from map_shared import (
     render_map,
 )
 from route_data import (
+    active_data_source,
     available_routes,
     closest_stop_distance_metres,
     nearest_routes,
@@ -29,7 +30,7 @@ def main() -> None:
         "Click to add Pin A and Pin B. Click a pin to remove it. "
         "By default, only routes selected for both pins are shown."
     )
-    source = st.session_state["data_source"]
+    source = active_data_source()
     if "go_pins" not in st.session_state:
         st.session_state["go_pins"] = []
     pins = st.session_state["go_pins"][:2]
