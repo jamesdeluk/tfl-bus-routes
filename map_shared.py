@@ -4,6 +4,7 @@ from typing import Any
 
 import folium
 import streamlit as st
+from streamlit.errors import StreamlitSecretNotFoundError
 from streamlit_folium import st_folium
 
 from route_data import (
@@ -17,6 +18,25 @@ from route_data import (
 
 DEFAULT_ROUTE_NUMBERS = ("1", "2", "3", "4", "5", "6", "7", "8", "9")
 PIN_COLOURS = {"A": "#FF0000", "B": "#0000FF"}
+CARTO_POSITRON_TILES = "https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png"
+
+
+def basemap_layer() -> folium.TileLayer:
+    """Return CARTO Positron with its private key, or OSM for local development."""
+    try:
+        carto_key = st.secrets.get("CARTO_BASEMAPS_API_KEY")
+    except StreamlitSecretNotFoundError:
+        carto_key = None
+    if carto_key:
+        return folium.TileLayer(
+            tiles=f"{CARTO_POSITRON_TILES}?api_key={carto_key}",
+            attr="&copy; OpenStreetMap contributors &copy; CARTO",
+            name="CARTO Positron",
+            max_zoom=20,
+        )
+
+    # Do not request CARTO tiles without a key: CARTO overlays an error watermark.
+    return folium.TileLayer("OpenStreetMap")
 
 
 def is_night_route(route_number: str) -> bool:
@@ -126,8 +146,9 @@ def build_map(
     route_map = folium.Map(
         location=[latitude, longitude],
         zoom_start=15 if search_target else 13,
-        tiles="CartoDB positron",
+        tiles=None,
     )
+    basemap_layer().add_to(route_map)
     for route_number in route_numbers:
         colour = "#{:02x}{:02x}{:02x}".format(*route_colours[route_number])
         for direction in ("outbound", "inbound"):
