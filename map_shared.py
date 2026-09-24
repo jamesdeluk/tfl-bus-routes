@@ -18,7 +18,7 @@ from route_data import (
 
 DEFAULT_ROUTE_NUMBERS = ("1", "2", "3", "4", "5", "6", "7", "8", "9")
 PIN_COLOURS = {"A": "#FF0000", "B": "#0000FF"}
-CARTO_POSITRON_TILES = "https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png"
+CARTO_POSITRON_TILES = "https://basemaps.cartocdn.com/rastertiles/positron/{z}/{x}/{y}.png"
 
 
 def basemap_layer() -> folium.TileLayer:
@@ -29,7 +29,7 @@ def basemap_layer() -> folium.TileLayer:
         carto_key = None
     if carto_key:
         return folium.TileLayer(
-            tiles=f"{CARTO_POSITRON_TILES}?api_key={carto_key}",
+            tiles=f"{CARTO_POSITRON_TILES}?key={carto_key}",
             attr="&copy; OpenStreetMap contributors &copy; CARTO",
             name="CARTO Positron",
             max_zoom=20,
