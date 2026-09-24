@@ -18,20 +18,20 @@ from route_data import (
 
 DEFAULT_ROUTE_NUMBERS = ("1", "2", "3", "4", "5", "6", "7", "8", "9")
 PIN_COLOURS = {"A": "#FF0000", "B": "#0000FF"}
-CARTO_POSITRON_TILES = "https://basemaps.cartocdn.com/rastertiles/positron/{z}/{x}/{y}.png"
+CARTO_VOYAGER_TILES = "https://basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}.png"
 
 
 def basemap_layer() -> folium.TileLayer:
-    """Return CARTO Positron with its private key, or OSM for local development."""
+    """Return CARTO Voyager with its private key, or OSM for local development."""
     try:
         carto_key = st.secrets.get("CARTO_BASEMAPS_API_KEY")
     except StreamlitSecretNotFoundError:
         carto_key = None
     if carto_key:
         return folium.TileLayer(
-            tiles=f"{CARTO_POSITRON_TILES}?key={carto_key}",
+            tiles=f"{CARTO_VOYAGER_TILES}?key={carto_key}",
             attr="&copy; OpenStreetMap contributors &copy; CARTO",
-            name="CARTO Positron",
+            name="CARTO Voyager",
             max_zoom=20,
         )
 
